@@ -1,0 +1,46 @@
+#!/bin/bash
+set -e
+
+VERSION=1.13
+URL="http://download.ckeditor.com/codemirror/releases/codemirror_$VERSION.zip"
+
+if [ -L "$0" ]; then
+  echo Executing this script as a symlink is not supported. 2>&1
+  exit 1
+fi
+
+echo Check if the required executables are available.
+which unzip curl mktemp
+
+cd "$(dirname "$0")"
+cd ..
+
+echo Create a temporary directory for extraction.
+mkdir -p tmp
+cd tmp
+
+TMP_FILE=$(mktemp)
+curl -o"$TMP_FILE" "$URL"
+unzip "$TMP_FILE"
+rm -v "$TMP_FILE"
+
+echo Remove the unnecessary execute bit of the distributed files.
+find . -type f -exec chmod -x {} ';'
+
+PLUGIN_DIR=../vendor/assets/javascripts/ckeditor/plugins
+LICENSE_FILE=LICENSE.md
+MAIN_DIR=codemirror
+
+echo Remove the old version if any.
+rm -Rf "$PLUGIN_DIR/$MAIN_DIR" "../$LICENSE_FILE"
+
+echo Copy the distribution to the codebase.
+mv "$MAIN_DIR" "$PLUGIN_DIR"
+mv "$LICENSE_FILE" ..
+
+cd ..
+
+echo Remove the temporary directory.
+rm -Rf tmp
+
+echo Done!
